@@ -175,7 +175,7 @@ def mainFunc(filePath):
     x = areaArrayX
     y = areaArrayY
     
-    # Finds the area under the Ting fit
+    # Finds the area
     area = integrate.trapezoid(y, x)  # Use trapezoidal rule for integration
     print(f"Enclosed area under the curve: {area}")
     AreaCurve.append(area)
@@ -201,11 +201,11 @@ def mainFunc(filePath):
     plt.show() # Comment out this line to make the CSV file immediately without having to close each plot
     
 
-
-process_folder_and_files("C:\\Users\\shris\\OneDrive\\Desktop\\Research")
+# Put the full file path below
+process_folder_and_files("Enter file path here")
 
 # Replace the file path below with your local file path
-with open("C:\\Users\\shris\\OneDrive\\Desktop\\Research\\AnalyzedData.csv", 'w', newline = '') as csvfile:
+with open("Enter file path here\\samplename.csv", 'w', newline = '') as csvfile:
     my_writer = csv.writer(csvfile)
     my_writer.writerow(['Filename', 'Contact Point', 'Turnaround Point', 'Area Curve'])
     for i in range(len(FileName)):
