@@ -5,6 +5,8 @@ import numpy as np
 import csv
 from scipy import integrate
 import os
+
+numFiles = 0
 ContactPoint = []
 TurnaroundPoint = []
 FileName = []
@@ -15,17 +17,52 @@ def process_folder_and_files(base_folder):
     if not os.path.isdir(base_folder):
         print(f"The path {base_folder} is not a valid directory.")
         return
+    
+    all_curves = []
 
     # Iterate through subfolders and files
     for root, dirs, files in os.walk(base_folder):
+        folder_curves = []
         for file in files:
-            if file.endswith(".py") or file.endswith(".csv"):
+            if not file.endswith(".jpk-force-map"):
                 continue
             
             file_path = os.path.join(root, file)
-            # Split path by backslash and get the final segment
-            mainFunc(file_path)
+            curve_data = mainFunc(file_path)
+            folder_curves.append(curve_data)
+            all_curves.append(curve_data)
 
+        if folder_curves:  # If we have data for this folder
+            plt.figure(figsize=(10, 5))
+            
+            # Plot all individual curves in black
+            for curve in folder_curves:
+                plt.plot(curve['x'], curve['y'], color='black', alpha=0.1, linewidth=1)
+            
+            # Find the length of each curve
+            curve_lengths = [len(curve['x']) for curve in folder_curves]
+            
+            # Find the minimum length among all curves
+            min_length = min(curve_lengths)
+            
+            # Truncate all curves to the minimum length
+            x_values = np.array([curve['x'][:min_length] for curve in folder_curves])
+            y_values = np.array([curve['y'][:min_length] for curve in folder_curves])
+            
+            # Calculate average x and y values
+            avg_x = np.mean(x_values, axis=0)
+            avg_y = np.mean(y_values, axis=0)
+            
+            # Plot average curve
+            plt.plot(avg_x, avg_y, 'r-', linewidth=3, label='Average')
+            
+            plt.xlabel('Indentation [nm]', fontsize=15)
+            plt.ylabel('Force [pN]', fontsize=15)
+            plt.title(f'Force Curves for {os.path.basename(root)}')
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(root, 'combined_plot.png'))
+            plt.close()
 
 def mainFunc(filePath):
     # Define global parameters for plotting
@@ -33,6 +70,7 @@ def mainFunc(filePath):
 
     # Define path of file to process
     file_path = filePath
+    new_path = os.path.dirname(file_path)
     filename = file_path.split('\\')[-1]
     FileName.append(filename)
 
@@ -119,9 +157,9 @@ def mainFunc(filePath):
     ting_result, hertz_result = doTingFit(force_curve, param_dict)
 
     # Check Hertz Result values
-    hertz_result.fit_report()
+    #hertz_result.fit_report()
     # Check Ting Result values
-    ting_result.fit_report()
+    #ting_result.fit_report()
 
 
 
@@ -174,21 +212,73 @@ def mainFunc(filePath):
     ContactPoint.append(hertz_result.delta0)
     x = areaArrayX
     y = areaArrayY
+
+    goingCurveX = []
+    goingCurveY = []
+    returningCurveX = []
+    returningCurveY = []
+    indexVal = 0
+
+    for k in range(0, len(x)):
+        if x[k] == maxVal:
+            goingCurveX.append(x[k])
+            goingCurveY.append(y[k])
+            indexVal = k
+            break
+        else:
+            goingCurveX.append(x[k])
+            goingCurveY.append(y[k])
+
+    for m in range(indexVal, len(x)):
+        returningCurveX.append(x[m])
+        returningCurveY.append(y[m])
     
     # Finds the area
     area = integrate.trapezoid(y, x)  # Use trapezoidal rule for integration
     print(f"Enclosed area under the curve: {area}")
     AreaCurve.append(area)
 
-    # Plot Ting Fit
+
+    coefficientsGoing = np.polyfit(goingCurveX, goingCurveY, 1)
+    coeffiicentsReturning = np.polyfit(returningCurveX, returningCurveY, 1)
+    polynomialGoing = np.poly1d(coefficientsGoing)
+    polynomialReturning = np.poly1d(coeffiicentsReturning)
+
+    plt.clf()
+
+    # Create points for the line
+    x_line = np.linspace(min(goingCurveX), maxVal, 100)
+    y_line = polynomialGoing(x_line)
+
+
+
+    # Plot
     plt.plot(
         (ind_fit[idxDown] - d0) * 1e9,
         force_fit[idxDown] * 1e12,
-        color='#E72E38',
+        color='black',
         linewidth=3,
         label='Experimental Data'
     )
-    plt.fill_between(x, y, 0, color='lightblue') 
+
+    plt.plot(
+        goingCurveX,
+        goingCurveY,
+        color='#599cff',
+        linewidth=3,
+        label='Going Curve'
+    )
+    plt.plot(x_line, y_line, color='red', label=f'Line of best fit: y = {coefficientsGoing[0]:.2f}x + {coefficientsGoing[1]:.2f}')
+
+    plt.plot(
+        returningCurveX,
+        returningCurveY,
+        color='#ed6b7a',
+        linewidth=3,
+        label='Returning Curve'
+    )
+
+    plt.fill_between(x, y, 0, color='lightblue', label='Area') 
 
 
     
@@ -198,10 +288,24 @@ def mainFunc(filePath):
     plt.xlabel('Indentation [nm]', fontsize = 15)
     plt.ylabel('Force [pN]', fontsize = 15)
     plt.legend()
-    plt.show() # Comment out this line to make the CSV file immediately without having to close each plot
+    plt.savefig(f'{new_path}\\{filename}.png')
+    #plt.show() # Comment out this line to make the CSV file immediately without having to close each plot
+    plt.close()
+    
+    return {
+        'x': (ind_fit[idxDown] - d0) * 1e9,
+        'y': force_fit[idxDown] * 1e12,
+        'going_x': goingCurveX,
+        'going_y': goingCurveY,
+        'returning_x': returningCurveX,
+        'returning_y': returningCurveY,
+        'contact_point': hertz_result.delta0,
+        'turn_point': maxVal,
+        'filename': filename,
+        'new_path': new_path
+    }
     
 
-# Put the full file path below
 process_folder_and_files("Enter file path here")
 
 # Replace the file path below with your local file path
