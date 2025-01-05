@@ -52,9 +52,47 @@ def process_folder_and_files(base_folder):
             # Calculate average x and y values
             avg_x = np.mean(x_values, axis=0)
             avg_y = np.mean(y_values, axis=0)
-            
+
+            maxAvgVal = max(avg_x)
+
+            goingAvgCurveX = []
+            goingAvgCurveY = []
+            returningAvgCurveX = []
+            returningAvgCurveY = []
+            indexVal = 0
+
+            for z in range(0, len(avg_x)):
+                if avg_x[z] == maxAvgVal:
+                    goingAvgCurveX.append(avg_x[z])
+                    goingAvgCurveY.append(avg_y[z])
+                    indexVal = z
+                    break
+                else:
+                    goingAvgCurveX.append(avg_x[z])
+                    goingAvgCurveY.append(avg_y[z])
+
+            for w in range(indexVal, len(avg_x)):
+                returningAvgCurveX.append(avg_x[w])
+                returningAvgCurveY.append(avg_y[w])
+                    
+            print(avg_x, avg_y)
+
             # Plot average curve
-            plt.plot(avg_x, avg_y, 'r-', linewidth=3, label='Average')
+            plt.plot(
+                goingAvgCurveX,
+                goingAvgCurveY,
+                color='#599cff',
+                linewidth=3,
+                label='Going Curve'
+            )
+
+            plt.plot(
+                returningAvgCurveX,
+                returningAvgCurveY,
+                color='#ed6b7a',
+                linewidth=3,
+                label='Returning Curve'
+            )
             
             plt.xlabel('Indentation [nm]', fontsize=15)
             plt.ylabel('Force [pN]', fontsize=15)
@@ -218,6 +256,7 @@ def mainFunc(filePath):
     returningCurveX = []
     returningCurveY = []
     indexVal = 0
+    print(f"Going Curve Initial: {goingCurveX}")
 
     for k in range(0, len(x)):
         if x[k] == maxVal:
@@ -233,6 +272,8 @@ def mainFunc(filePath):
         returningCurveX.append(x[m])
         returningCurveY.append(y[m])
     
+
+    print(f"Going Curve Final: {goingCurveX}")
     # Finds the area
     area = integrate.trapezoid(y, x)  # Use trapezoidal rule for integration
     print(f"Enclosed area under the curve: {area}")
@@ -306,10 +347,10 @@ def mainFunc(filePath):
     }
     
 
-process_folder_and_files("Enter file path here")
+process_folder_and_files("Replace the file path below with your local or absolute file path")
 
-# Replace the file path below with your local file path
-with open("Enter file path here\\samplename.csv", 'w', newline = '') as csvfile:
+# Replace the file path below with your local or absolute file path
+with open("Replace the file path below with your local or absolute file path\\'sample_csv_name'.csv", 'w', newline = '') as csvfile:
     my_writer = csv.writer(csvfile)
     my_writer.writerow(['Filename', 'Contact Point', 'Turnaround Point', 'Area Curve'])
     for i in range(len(FileName)):
