@@ -4,6 +4,7 @@
 Make sure you create a folder and 3 subfolders with the `.jpk-force-map` files within each file
 
 ### Sample Structure:
+```
 main/
 ├── folder1/           # Root layout with tabs
 │├── sample1.jpk     # JPK Files
@@ -11,6 +12,7 @@ main/
 │├── sample2.jpk     # JPK Files
 ├── folder3/     # Theme context
 │├── sample3.jpk     # JPK Files
+```
 
 ## Steps to Run the Python Program
 1. Clone the repository.
